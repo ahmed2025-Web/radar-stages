@@ -6,7 +6,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Racine du projet (…/radar-stages), deux niveaux au-dessus de ce fichier.
+
 ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
 
@@ -45,6 +45,10 @@ SEARCH_KEYWORDS: list[str] = _csv(
 )
 SEARCH_LOCATIONS: list[str] = _csv(os.getenv("SEARCH_LOCATIONS", "France"))
 SEARCH_INTERNATIONAL: bool = os.getenv("SEARCH_INTERNATIONAL", "false").lower() == "true"
+
+# Collecteurs exécutés par le pipeline. "sample" seul par défaut (aucun réseau) ;
+# ajoute "linkedin" pour activer le scraping réel : ACTIVE_COLLECTORS=sample,linkedin
+ACTIVE_COLLECTORS: list[str] = _csv(os.getenv("ACTIVE_COLLECTORS", "sample"))
 
 
 def sqlite_path() -> Path:

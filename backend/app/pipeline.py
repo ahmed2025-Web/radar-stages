@@ -15,15 +15,24 @@ def _load_profile() -> str:
 
 
 def run(sources: list[str] | None = None) -> dict:
-    """Lance la collecte sur les sources demandées (toutes par défaut) et met à jour la base."""
-    sources = sources or list(COLLECTORS)
+    """Lance la collecte sur les sources demandées (ACTIVE_COLLECTORS par défaut).
+
+    Résilient : si une source échoue (réseau, blocage, HTML changé), on la saute
+    et on continue avec les autres."""
+    sources = sources or config.ACTIVE_COLLECTORS
 
     collected: dict[str, Offer] = {}
+    errors: dict[str, str] = {}
     for name in sources:
         collector = COLLECTORS.get(name)
         if collector is None:
             continue
-        for offer in collector():
+        try:
+            source_offers = collector()
+        except Exception as exc:  # une source défaillante ne casse pas le pipeline
+            errors[name] = str(exc)
+            continue
+        for offer in source_offers:
             collected[offer.id] = offer  # la clé dédoublonne
 
     offers = list(collected.values())
@@ -36,7 +45,12 @@ def run(sources: list[str] | None = None) -> dict:
     db.init_db()
     db.upsert_offers(offers)
 
-    return {"collected": len(offers), "sources": sources, "scoring": scorer.mode}
+    return {
+        "collected": len(offers),
+        "sources": sources,
+        "scoring": scorer.mode,
+        "errors": errors,
+    }
 
 
 if __name__ == "__main__":

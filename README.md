@@ -69,7 +69,7 @@ mots-clés, pas de génération de texte).
 - [x] Modèle d'offre + base + API + frontend
 - [x] Scoring avec fallback mots-clés
 - [x] Interface radar (filtres, score, lien postuler)
-- [ ] Collecteur LinkedIn (API publique / scraping respectueux)
+- [x] Collecteur LinkedIn (API publique « guest », scraping respectueux)
 - [ ] Collecteurs Welcome to the Jungle & JobTeaser
 - [ ] Filtre pays (France + international)
 - [ ] Scoring par embeddings branché sur le CV réel
