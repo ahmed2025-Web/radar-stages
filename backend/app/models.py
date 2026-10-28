@@ -10,6 +10,7 @@ class Offer(BaseModel):
     title: str
     url: str
     source: str = "sample"          # linkedin, wttj, jobteaser, …
+    external_id: str = ""           # id unique de l'offre chez la source (ex. id LinkedIn)
     location: str = ""
     country: str = "France"
     remote: bool = False
@@ -24,7 +25,14 @@ class Offer(BaseModel):
 
     @property
     def id(self) -> str:
-        """Identifiant stable pour le dédoublonnage (entreprise + intitulé + source)."""
+        """Identifiant stable pour le dédoublonnage.
+
+        On privilégie l'id unique de la source (ex. id LinkedIn), bien plus fiable :
+        il distingue deux annonces au même intitulé et fusionne la même annonce
+        trouvée via plusieurs mots-clés. À défaut, on retombe sur entreprise+intitulé.
+        """
+        if self.external_id:
+            return f"{self.source}:{self.external_id}"
         raw = f"{self.company}|{self.title}|{self.source}".lower().strip()
         return hashlib.sha1(raw.encode()).hexdigest()[:16]
 
