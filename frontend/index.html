@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Radar Stages</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#f4f5f7; --surface:#fff; --line:#e3e6ec;
+    --fg:#141821; --muted:#5a6472; --faint:#8a93a3;
+    --accent:#2f5bea; --accent-soft:#e7edff;
+    --good:#0f9d6b; --warn:#c8761a; --applied:#7a3df0;
+    --good-soft:#e2f5ec; --warn-soft:#fbeede; --applied-soft:#efe8fe;
+    --radius:14px;
+    --display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+    --body:"IBM Plex Sans",system-ui,sans-serif;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0f1218; --surface:#171c25; --line:#252c38;
+    --fg:#eef1f6; --muted:#9aa4b4; --faint:#6b7483;
+    --accent:#6f90ff; --accent-soft:#1c2642;
+    --good:#45d19a; --warn:#e0a158; --applied:#b79bff;
+    --good-soft:#14301f; --warn-soft:#2f2415; --applied-soft:#241a3d;
+    color-scheme:dark;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0f1218; --surface:#171c25; --line:#252c38;
+    --fg:#eef1f6; --muted:#9aa4b4; --faint:#6b7483;
+    --accent:#6f90ff; --accent-soft:#1c2642;
+    --good:#45d19a; --warn:#e0a158; --applied:#b79bff;
+    --good-soft:#14301f; --warn-soft:#2f2415; --applied-soft:#241a3d;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);line-height:1.5}
+  .wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  header.top{padding:22px 0 10px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:30px;height:30px;border-radius:9px;background:var(--accent);display:grid;place-items:center;flex:none}
+  .logo svg{width:18px;height:18px}
+  h1{font-family:var(--display);font-weight:700;font-size:1.5rem;margin:0;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:.9rem;margin:2px 0 0}
+  .count{font-family:var(--display);font-weight:500}
+  .controls{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:12px 0;border-bottom:1px solid var(--line)}
+  .toprow{display:flex;gap:8px}
+  .search{flex:1;min-width:0;padding:11px 14px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--fg);font:inherit}
+  .search::placeholder{color:var(--faint)}
+  select.country{padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:var(--surface);color:var(--fg);font:inherit;max-width:45%}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .chip{border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:6px 12px;border-radius:999px;font-size:.82rem;cursor:pointer;font-family:var(--body)}
+  .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .shown{color:var(--muted);font-size:.84rem;margin-top:12px}
+  .list{display:flex;flex-direction:column;gap:12px;padding:14px 0 40px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:grid;grid-template-columns:1fr auto;gap:10px 14px}
+  .card-main{min-width:0}
+  .co{color:var(--muted);font-size:.85rem;font-weight:500}
+  .title{font-family:var(--display);font-weight:700;font-size:1.08rem;margin:4px 0 6px;letter-spacing:-.01em;text-wrap:balance}
+  .meta{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:.84rem;align-items:center}
+  .meta .ic{display:inline-flex;align-items:center;gap:5px}
+  .meta svg{width:14px;height:14px;opacity:.75}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .tag{background:var(--accent-soft);color:var(--accent);font-size:.74rem;font-weight:600;padding:3px 9px;border-radius:7px}
+  .side{display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:12px}
+  .score{text-align:center;min-width:64px}
+  .score .val{font-family:var(--display);font-weight:700;font-size:1.3rem;font-variant-numeric:tabular-nums;line-height:1}
+  .score .lab{font-size:.64rem;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+  .score.hi .val{color:var(--good)}.score.mid .val{color:var(--warn)}.score.lo .val{color:var(--faint)}
+  .apply{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;text-decoration:none;font-family:var(--body);font-weight:600;font-size:.86rem;padding:9px 15px;border-radius:10px;white-space:nowrap;cursor:pointer}
+  .apply svg{width:14px;height:14px}
+  .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .badge{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:7px}
+  .b-applied{background:var(--applied-soft);color:var(--applied)}
+  .b-easy{background:var(--good-soft);color:var(--good)}
+  .b-mail,.b-site{background:var(--warn-soft);color:var(--warn)}
+  .foot{color:var(--faint);font-size:.78rem;padding:0 0 30px;text-align:center}
+  .empty{color:var(--muted);text-align:center;padding:40px 0}
+  @media(max-width:560px){
+    .card{grid-template-columns:1fr}
+    .side{flex-direction:row;align-items:center;justify-content:space-between}
+    .apply{order:-1}
+    select.country{max-width:40%}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg></span>
+      <div>
+        <h1>Radar Stages</h1>
+        <p class="sub"><span class="count" id="total">0</span> offres · stage fin d'études — dev logiciel &amp; IA</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="toprow">
+      <input class="search" id="q" type="search" placeholder="Filtrer : entreprise, techno, intitulé…" aria-label="Rechercher">
+      <select class="country" id="country" aria-label="Pays"><option value="">Tous les pays</option></select>
+    </div>
+    <div class="chips" id="chips">
+      <button class="chip" data-f="all" aria-pressed="true">Toutes</button>
+      <button class="chip" data-f="remote" aria-pressed="false">Remote / Hybride</button>
+      <button class="chip" data-f="easy" aria-pressed="false">Candidature simplifiée</button>
+      <button class="chip" data-f="software" aria-pressed="false">Dev / Software</button>
+      <button class="chip" data-f="ia" aria-pressed="false">IA / GenAI</button>
+      <button class="chip" data-f="todo" aria-pressed="false">Pas encore postulé</button>
+    </div>
+    <div class="shown" id="shown"></div>
+  </div>
+
+  <div class="list" id="list"></div>
+  <p class="foot">Les offres sont collectées par le radar et triées par score de match (calculé contre ton CV).</p>
+</div>
+
+<script>
+const ic = {
+ pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+ clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+ euro:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 7a6 6 0 1 0 0 10M5 10h8M5 14h8"/></svg>',
+ ext:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>'
+};
+const list=document.getElementById('list'), shown=document.getElementById('shown'),
+      total=document.getElementById('total'), countrySel=document.getElementById('country');
+let OFFERS=[], filter="all", q="", country="";
+const cls=m=>m>=80?"hi":m>=65?"mid":"lo";
+const isSoftware=o=>o.tags.some(t=>/software|dev|full/i.test(t));
+const isIA=o=>o.tags.some(t=>/ia|ai|genai|llm|agent/i.test(t));
+
+async function load(){
+  try{
+    const r=await fetch('/api/offers');
+    if(!r.ok) throw 0;
+    OFFERS=await r.json();
+  }catch(e){
+    list.innerHTML='<p class="empty">API injoignable. Lance le backend :<br><code>uvicorn app.main:app --reload</code></p>';
+    return;
+  }
+  const countries=[...new Set(OFFERS.map(o=>o.country).filter(Boolean))].sort();
+  countrySel.insertAdjacentHTML('beforeend',
+    countries.map(c=>`<option value="${c}">${c}</option>`).join(''));
+  render();
+}
+function render(){
+  let rows=OFFERS.filter(o=>{
+    if(country && o.country!==country) return false;
+    if(filter==="remote"&&!o.remote) return false;
+    if(filter==="easy"&&o.apply_mode!=="easy_apply") return false;
+    if(filter==="software"&&!isSoftware(o)) return false;
+    if(filter==="ia"&&!isIA(o)) return false;
+    if(filter==="todo"&&o.applied) return false;
+    if(q){const s=(o.company+" "+o.title+" "+o.tags.join(" ")).toLowerCase();if(!s.includes(q))return false;}
+    return true;
+  });
+  total.textContent=OFFERS.length;
+  list.innerHTML = rows.length ? rows.map(o=>`
+   <article class="card">
+     <div class="card-main">
+       <div class="co">${o.company}</div>
+       <h2 class="title">${o.title}</h2>
+       <div class="meta">
+         <span class="ic">${ic.pin}${o.location||o.country}</span>
+         ${o.posted?`<span class="ic">${ic.clock}${o.posted}</span>`:''}
+         ${o.salary?`<span class="ic">${ic.euro}${o.salary}</span>`:''}
+       </div>
+       <div class="tags">${o.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+       <div class="badges">
+         ${o.applied?'<span class="badge b-applied">✓ Déjà postulé</span>':''}
+         ${o.apply_mode==="easy_apply"?'<span class="badge b-easy">Candidature simplifiée</span>':''}
+         ${o.apply_mode==="mail"?'<span class="badge b-mail">Candidature par mail</span>':''}
+         ${o.apply_mode==="site"?'<span class="badge b-site">Site externe</span>':''}
+       </div>
+     </div>
+     <div class="side">
+       <div class="score ${cls(o.match)}"><div class="val">${o.match}</div><div class="lab">match</div></div>
+       <a class="apply" href="${o.url}" target="_blank" rel="noopener">Voir l'offre ${ic.ext}</a>
+     </div>
+   </article>`).join('') : '<p class="empty">Aucune offre pour ces filtres.</p>';
+  shown.textContent=`${rows.length} offre${rows.length>1?'s':''} affichée${rows.length>1?'s':''}`;
+}
+document.getElementById('chips').addEventListener('click',e=>{
+  const b=e.target.closest('.chip');if(!b)return;
+  filter=b.dataset.f;
+  [...e.currentTarget.children].forEach(c=>c.setAttribute('aria-pressed',c===b));
+  render();
+});
+document.getElementById('q').addEventListener('input',e=>{q=e.target.value.trim().toLowerCase();render();});
+countrySel.addEventListener('change',e=>{country=e.target.value;render();});
+load();
+</script>
+</body>
+</html>
