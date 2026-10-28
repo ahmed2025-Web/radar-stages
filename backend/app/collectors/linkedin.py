@@ -8,6 +8,7 @@ aux erreurs (si LinkedIn bloque ou change son HTML, on renvoie ce qu'on a).
 """
 from __future__ import annotations
 
+import re
 import time
 
 import httpx
@@ -15,6 +16,10 @@ from bs4 import BeautifulSoup
 
 from .. import config
 from ..models import Offer
+from ..tagging import infer_tags
+
+# Id numérique LinkedIn en fin d'URL d'offre (…-4461575934 ou /view/4482138321/).
+_JOB_ID = re.compile(r"(\d{6,})/?$")
 
 GUEST_API = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
 _HEADERS = {
@@ -26,20 +31,10 @@ _HEADERS = {
 # f_JT=I : type d'emploi = stage (Internship)
 _RESULTS_PER_PAGE = 10
 
-# Mots-clés -> tags affichés, pour que les filtres techno marchent côté frontend.
-_TAG_RULES = {
-    "IA": ("ia", "a.i", "intelligence artificielle", "machine learning", "ml ", "genai", "llm", "agent"),
-    "Data": ("data", "données"),
-    "Full-Stack": ("full stack", "full-stack", "fullstack"),
-    "Dev": ("développ", "developer", "software", "engineer", "ingénieur"),
-    "DevOps": ("devops", "cloud", "kubernetes", "ci/cd"),
-}
 
-
-def _infer_tags(title: str) -> list[str]:
-    low = title.lower()
-    tags = [tag for tag, needles in _TAG_RULES.items() if any(n in low for n in needles)]
-    return tags or ["Dev"]
+def _job_id(url: str) -> str:
+    match = _JOB_ID.search(url)
+    return match.group(1) if match else ""
 
 
 def parse_jobs(html: str) -> list[Offer]:
@@ -56,15 +51,17 @@ def parse_jobs(html: str) -> list[Offer]:
         time_el = card.select_one("time")
 
         title = title_el.get_text(strip=True)
+        url = link_el["href"].split("?")[0]
         offers.append(
             Offer(
                 company=company_el.get_text(strip=True) if company_el else "",
                 title=title,
-                url=link_el["href"].split("?")[0],
+                url=url,
                 source="linkedin",
+                external_id=_job_id(url),
                 location=loc_el.get_text(strip=True) if loc_el else "",
                 posted=time_el.get_text(strip=True) if time_el else "",
-                tags=_infer_tags(title),
+                tags=infer_tags(title),
                 apply_mode="site",
             )
         )
