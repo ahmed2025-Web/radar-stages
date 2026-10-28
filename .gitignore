@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Env & secrets
+.env
+.env.local
+
+# Data / DB
+*.db
+*.sqlite3
+data/
+
+# Models cache (sentence-transformers)
+.cache/
+models/
+
+# Node (si migration frontend)
+node_modules/
+dist/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
