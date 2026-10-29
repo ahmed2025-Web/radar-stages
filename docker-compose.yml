@@ -1,15 +1,14 @@
 services:
   api:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:///data/radar.db
-      - PROFILE_PATH=/app/profile/cv.md
+      - ACTIVE_COLLECTORS=${ACTIVE_COLLECTORS:-sample}
       - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
     volumes:
-      - ./frontend:/app/frontend:ro
-      - ./profile:/app/profile:ro
       - radar-data:/app/data
 
 volumes:
