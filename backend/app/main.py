@@ -3,10 +3,12 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 
-from . import config, db, pipeline
+from . import config, db, letters, pipeline
+from .llm import get_llm
 
 
 @asynccontextmanager
@@ -39,6 +41,26 @@ def mark_applied(offer_id: str, applied: bool = True):
         raise HTTPException(404, "Offre inconnue")
     db.set_applied(offer_id, applied)
     return {"id": offer_id, "applied": applied}
+
+
+@app.post("/api/offers/{offer_id}/letter")
+def cover_letter(offer_id: str):
+    """Génère un brouillon de lettre de motivation adapté à l'offre."""
+    offer = next((o for o in db.list_offers() if o.id == offer_id), None)
+    if offer is None:
+        raise HTTPException(404, "Offre inconnue")
+    llm = get_llm()
+    if not llm.available():
+        raise HTTPException(503, "Génération désactivée : renseigne MISTRAL_API_KEY dans .env")
+    try:
+        letter = letters.generate_cover_letter(offer, config.read_profile(), llm)
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 429:
+            raise HTTPException(503, "Limite d'API Mistral atteinte — réessaie dans un instant.") from exc
+        raise HTTPException(502, "Le service de génération a renvoyé une erreur.") from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(502, "Service de génération injoignable.") from exc
+    return {"offer_id": offer_id, "letter": letter}
 
 
 @app.get("/")

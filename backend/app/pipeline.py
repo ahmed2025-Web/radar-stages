@@ -7,13 +7,6 @@ from .matching import Scorer
 from .models import Offer
 
 
-def _load_profile() -> str:
-    try:
-        return config.PROFILE_PATH.read_text(encoding="utf-8")
-    except OSError:
-        return ""
-
-
 def run(sources: list[str] | None = None) -> dict:
     """Lance la collecte sur les sources demandées (ACTIVE_COLLECTORS par défaut).
 
@@ -37,7 +30,7 @@ def run(sources: list[str] | None = None) -> dict:
 
     offers = list(collected.values())
 
-    scorer = Scorer(_load_profile())
+    scorer = Scorer(config.read_profile())
     for offer in offers:
         offer.match = scorer.score(offer.match_text())
 
