@@ -8,7 +8,7 @@ import json
 import sqlite3
 from contextlib import contextmanager
 
-from . import config
+from . import config, freshness
 from .models import Offer
 
 
@@ -40,17 +40,26 @@ def init_db() -> None:
 
 
 def upsert_offers(offers: list[Offer]) -> int:
-    """Insère ou met à jour les offres. Préserve le flag `applied` déjà en base."""
+    """Insère ou met à jour les offres.
+
+    Préserve `applied` et `first_seen` (date de première détection) des offres déjà
+    connues ; fixe `first_seen` à maintenant pour les nouvelles."""
     with _conn() as con:
-        known_applied = {
-            row["id"] for row in con.execute("SELECT id FROM offers WHERE applied = 1")
+        existing = {
+            row["id"]: json.loads(row["data"])
+            for row in con.execute("SELECT id, data FROM offers")
         }
         for o in offers:
-            if o.id in known_applied:
-                o.applied = True
+            prev = existing.get(o.id)
+            if prev:
+                o.applied = prev.get("applied", o.applied)
+                o.first_seen = prev.get("first_seen") or o.first_seen or freshness.now_iso()
+            else:
+                o.first_seen = o.first_seen or freshness.now_iso()
             con.execute(
                 "INSERT INTO offers (id, match, applied, data) VALUES (?, ?, ?, ?) "
-                "ON CONFLICT(id) DO UPDATE SET match=excluded.match, data=excluded.data",
+                "ON CONFLICT(id) DO UPDATE SET "
+                "match=excluded.match, applied=excluded.applied, data=excluded.data",
                 (o.id, o.match, int(o.applied), o.model_dump_json()),
             )
     return len(offers)
@@ -64,6 +73,12 @@ def list_offers() -> list[Offer]:
 
 def set_applied(offer_id: str, applied: bool = True) -> None:
     with _conn() as con:
+        row = con.execute("SELECT data FROM offers WHERE id = ?", (offer_id,)).fetchone()
+        if row is None:
+            return
+        data = json.loads(row["data"])
+        data["applied"] = applied
         con.execute(
-            "UPDATE offers SET applied = ? WHERE id = ?", (int(applied), offer_id)
+            "UPDATE offers SET applied = ?, data = ? WHERE id = ?",
+            (int(applied), json.dumps(data), offer_id),
         )

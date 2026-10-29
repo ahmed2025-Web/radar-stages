@@ -74,7 +74,7 @@ mots-clés, pas de génération de texte).
 - [ ] Filtre pays (France + international)
 - [ ] Scoring par embeddings branché sur le CV réel
 - [x] Génération de brouillon de lettre via LLM (Mistral)
-- [ ] Scheduler quotidien + notifications
+- [x] Scheduler quotidien + nouveautés mises en évidence
 - [ ] Déploiement (Docker + k8s + CI)
 
 ## Licence
