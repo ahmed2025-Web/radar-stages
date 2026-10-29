@@ -56,3 +56,11 @@ def sqlite_path() -> Path:
     if DATABASE_URL.startswith("sqlite:///"):
         return _path(DATABASE_URL.removeprefix("sqlite:///"))
     return ROOT / "data" / "radar.db"
+
+
+def read_profile() -> str:
+    """Contenu du CV / profil utilisé pour le matching et la génération de lettre."""
+    try:
+        return PROFILE_PATH.read_text(encoding="utf-8")
+    except OSError:
+        return ""

@@ -69,6 +69,23 @@
   .score.hi .val{color:var(--good)}.score.mid .val{color:var(--warn)}.score.lo .val{color:var(--faint)}
   .apply{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;text-decoration:none;font-family:var(--body);font-weight:600;font-size:.86rem;padding:9px 15px;border-radius:10px;white-space:nowrap;cursor:pointer}
   .apply svg{width:14px;height:14px}
+  .actions{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+  .letter{display:inline-flex;align-items:center;gap:6px;background:transparent;color:var(--accent);border:1px solid var(--accent);font-family:var(--body);font-weight:600;font-size:.82rem;padding:8px 13px;border-radius:10px;white-space:nowrap;cursor:pointer}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+  .modal{background:var(--surface);border:1px solid var(--line);border-radius:16px;max-width:620px;width:100%;max-height:85vh;display:flex;flex-direction:column}
+  .modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}
+  .modal-head h3{margin:0;font-family:var(--display);font-size:1.05rem}
+  .co2{color:var(--muted);font-size:.85rem;margin-top:2px}
+  .x{background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer;line-height:1;padding:0 4px}
+  .modal-body{padding:18px 20px;overflow-y:auto}
+  .letter-text{white-space:pre-wrap;font-size:.92rem;line-height:1.6}
+  .modal-foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end}
+  .btn{font-family:var(--body);font-weight:600;font-size:.86rem;padding:9px 15px;border-radius:10px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .muted2{color:var(--muted);font-size:.9rem;display:flex;align-items:center;gap:8px}
+  .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.spinner{animation:none}}
   .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .badge{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:7px}
   .b-applied{background:var(--applied-soft);color:var(--applied)}
@@ -114,6 +131,23 @@
 
   <div class="list" id="list"></div>
   <p class="foot">Les offres sont collectées par le radar et triées par score de match (calculé contre ton CV).</p>
+</div>
+
+<div class="overlay" id="modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <div class="modal-head">
+      <div>
+        <h3 id="m-title">Brouillon de lettre</h3>
+        <div class="co2" id="m-sub"></div>
+      </div>
+      <button class="x" id="m-close" aria-label="Fermer">×</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+    <div class="modal-foot">
+      <button class="btn" id="m-copy" hidden>Copier</button>
+      <button class="btn primary" id="m-closebtn">Fermer</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -176,7 +210,10 @@ function render(){
      </div>
      <div class="side">
        <div class="score ${cls(o.match)}"><div class="val">${o.match}</div><div class="lab">match</div></div>
-       <a class="apply" href="${o.url}" target="_blank" rel="noopener">Voir l'offre ${ic.ext}</a>
+       <div class="actions">
+         <a class="apply" href="${o.url}" target="_blank" rel="noopener">Voir l'offre ${ic.ext}</a>
+         <button class="letter" data-id="${o.id}">✍️ Lettre</button>
+       </div>
      </div>
    </article>`).join('') : '<p class="empty">Aucune offre pour ces filtres.</p>';
   shown.textContent=`${rows.length} offre${rows.length>1?'s':''} affichée${rows.length>1?'s':''}`;
@@ -189,6 +226,52 @@ document.getElementById('chips').addEventListener('click',e=>{
 });
 document.getElementById('q').addEventListener('input',e=>{q=e.target.value.trim().toLowerCase();render();});
 countrySel.addEventListener('change',e=>{country=e.target.value;render();});
+
+// --- Génération de lettre ---
+const modal=document.getElementById('modal'), mSub=document.getElementById('m-sub'),
+      mBody=document.getElementById('m-body'), mCopy=document.getElementById('m-copy');
+let currentLetter="";
+const closeModal=()=>{modal.hidden=true;};
+document.getElementById('m-close').addEventListener('click',closeModal);
+document.getElementById('m-closebtn').addEventListener('click',closeModal);
+modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+list.addEventListener('click',async e=>{
+  const b=e.target.closest('.letter'); if(!b) return;
+  const offer=OFFERS.find(o=>o.id===b.dataset.id);
+  mSub.textContent=offer?`${offer.company} — ${offer.title}`:'';
+  mCopy.hidden=true; currentLetter="";
+  mBody.innerHTML='<div class="muted2"><span class="spinner"></span> Génération en cours…</div>';
+  modal.hidden=false;
+  try{
+    const r=await fetch(`/api/offers/${b.dataset.id}/letter`,{method:'POST'});
+    if(!r.ok){
+      const d=await r.json().catch(()=>({}));
+      mBody.innerHTML=`<div class="muted2">${d.detail||'Génération indisponible. Réessaie.'}</div>`;
+      return;
+    }
+    const data=await r.json();
+    currentLetter=data.letter;
+    mBody.innerHTML='<div class="letter-text"></div>';
+    mBody.querySelector('.letter-text').textContent=currentLetter;
+    mCopy.hidden=false;
+  }catch(err){
+    mBody.innerHTML='<div class="muted2">Erreur lors de la génération. Réessaie.</div>';
+  }
+});
+mCopy.addEventListener('click',async()=>{
+  try{
+    await navigator.clipboard.writeText(currentLetter);
+    mCopy.textContent='Copié ✓';
+    setTimeout(()=>{mCopy.textContent='Copier';},1500);
+  }catch(err){
+    const sel=window.getSelection(), range=document.createRange();
+    range.selectNodeContents(mBody.querySelector('.letter-text'));
+    sel.removeAllRanges(); sel.addRange(range);
+  }
+});
+
 load();
 </script>
 </body>

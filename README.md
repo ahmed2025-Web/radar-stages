@@ -73,7 +73,7 @@ mots-clés, pas de génération de texte).
 - [ ] Collecteurs Welcome to the Jungle & JobTeaser
 - [ ] Filtre pays (France + international)
 - [ ] Scoring par embeddings branché sur le CV réel
-- [ ] Génération de brouillon de lettre via LLM
+- [x] Génération de brouillon de lettre via LLM (Mistral)
 - [ ] Scheduler quotidien + notifications
 - [ ] Déploiement (Docker + k8s + CI)
 
