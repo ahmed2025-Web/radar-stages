@@ -7,7 +7,7 @@ import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 
-from . import config, db, letters, pipeline
+from . import config, db, freshness, letters, pipeline, scheduler
 from .llm import get_llm
 
 
@@ -17,7 +17,9 @@ async def lifespan(app: FastAPI):
     # Premier remplissage si la base est vide (offres de démo).
     if not db.list_offers():
         pipeline.run()
+    scheduler.start()
     yield
+    scheduler.stop()
 
 
 app = FastAPI(title="Radar Stages", version="0.1.0", lifespan=lifespan)
@@ -26,7 +28,13 @@ app = FastAPI(title="Radar Stages", version="0.1.0", lifespan=lifespan)
 @app.get("/api/offers")
 def get_offers():
     offers = db.list_offers()
-    return JSONResponse([o.model_dump() | {"id": o.id} for o in offers])
+    return JSONResponse(
+        [
+            o.model_dump()
+            | {"id": o.id, "new": freshness.is_new(o.first_seen, config.NEW_WINDOW_HOURS)}
+            for o in offers
+        ]
+    )
 
 
 @app.post("/api/refresh")

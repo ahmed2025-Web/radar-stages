@@ -88,6 +88,7 @@
   @media (prefers-reduced-motion:reduce){.spinner{animation:none}}
   .badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .badge{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:7px}
+  .b-new{background:var(--accent-soft);color:var(--accent)}
   .b-applied{background:var(--applied-soft);color:var(--applied)}
   .b-easy{background:var(--good-soft);color:var(--good)}
   .b-mail,.b-site{background:var(--warn-soft);color:var(--warn)}
@@ -120,6 +121,7 @@
     </div>
     <div class="chips" id="chips">
       <button class="chip" data-f="all" aria-pressed="true">Toutes</button>
+      <button class="chip" data-f="new" aria-pressed="false">🆕 Nouveautés</button>
       <button class="chip" data-f="remote" aria-pressed="false">Remote / Hybride</button>
       <button class="chip" data-f="easy" aria-pressed="false">Candidature simplifiée</button>
       <button class="chip" data-f="software" aria-pressed="false">Dev / Software</button>
@@ -181,6 +183,7 @@ async function load(){
 function render(){
   let rows=OFFERS.filter(o=>{
     if(country && o.country!==country) return false;
+    if(filter==="new"&&!o.new) return false;
     if(filter==="remote"&&!o.remote) return false;
     if(filter==="easy"&&o.apply_mode!=="easy_apply") return false;
     if(filter==="software"&&!isSoftware(o)) return false;
@@ -202,6 +205,7 @@ function render(){
        </div>
        <div class="tags">${o.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
        <div class="badges">
+         ${o.new?'<span class="badge b-new">🆕 Nouveau</span>':''}
          ${o.applied?'<span class="badge b-applied">✓ Déjà postulé</span>':''}
          ${o.apply_mode==="easy_apply"?'<span class="badge b-easy">Candidature simplifiée</span>':''}
          ${o.apply_mode==="mail"?'<span class="badge b-mail">Candidature par mail</span>':''}

@@ -50,6 +50,12 @@ SEARCH_INTERNATIONAL: bool = os.getenv("SEARCH_INTERNATIONAL", "false").lower() 
 # ajoute "linkedin" pour activer le scraping réel : ACTIVE_COLLECTORS=sample,linkedin
 ACTIVE_COLLECTORS: list[str] = _csv(os.getenv("ACTIVE_COLLECTORS", "sample"))
 
+# Scheduler : relance automatique de la collecte. Désactivé par défaut.
+SCHEDULER_ENABLED: bool = os.getenv("SCHEDULER_ENABLED", "false").lower() == "true"
+REFRESH_INTERVAL_HOURS: int = int(os.getenv("REFRESH_INTERVAL_HOURS", "24"))
+# Fenêtre pendant laquelle une offre fraîchement détectée est marquée « nouvelle ».
+NEW_WINDOW_HOURS: int = int(os.getenv("NEW_WINDOW_HOURS", "24"))
+
 
 def sqlite_path() -> Path:
     """Chemin du fichier SQLite déduit de DATABASE_URL (sinon data/radar.db)."""

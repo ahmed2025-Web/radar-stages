@@ -19,9 +19,10 @@ class Offer(BaseModel):
     tags: list[str] = Field(default_factory=list)
     description: str = ""
     apply_mode: str = "site"        # site, easy_apply, mail
-    # Rempli par le pipeline :
+    # Rempli par le pipeline / la base :
     match: int = 0                  # score 0–100 offre ↔ profil
     applied: bool = False
+    first_seen: str = ""            # ISO datetime de première détection (rempli par la base)
 
     @property
     def id(self) -> str:
