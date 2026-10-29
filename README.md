@@ -75,7 +75,29 @@ mots-clés, pas de génération de texte).
 - [ ] Scoring par embeddings branché sur le CV réel
 - [x] Génération de brouillon de lettre via LLM (Mistral)
 - [x] Scheduler quotidien + nouveautés mises en évidence
-- [ ] Déploiement (Docker + k8s + CI)
+- [x] Déploiement (image Docker autonome + blueprint Render)
+
+## Déploiement
+
+Le projet se déploie via une **image Docker autonome** (elle embarque le backend,
+le frontend et le profil).
+
+En local :
+
+```bash
+docker compose up --build        # radar sur http://localhost:8000
+```
+
+Sur **Render** (gratuit, depuis GitHub) :
+1. New + → **Blueprint** → connecte ce repo (il lit `render.yaml`).
+2. Renseigne `MISTRAL_API_KEY` dans le dashboard (optionnel, pour les lettres).
+3. Apply → Render build l'image et fournit une URL `…onrender.com`.
+
+Variables utiles : `ACTIVE_COLLECTORS` (`linkedin` pour de vraies offres, `sample`
+si l'IP cloud est bloquée), `SCHEDULER_ENABLED`, `REFRESH_INTERVAL_HOURS`.
+
+> L'image reste légère : le scoring tourne en mode mots-clés (sentence-transformers
+> n'est pas embarqué, trop lourd pour un tier gratuit).
 
 ## Licence
 

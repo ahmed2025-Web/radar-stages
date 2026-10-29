@@ -1,0 +1,16 @@
+# Blueprint Render : déploie le radar comme service web Docker.
+# Sur Render : New + → Blueprint → connecte ce repo → Apply.
+services:
+  - type: web
+    name: radar-stages
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      # Source des offres. "linkedin" = vraies offres ; "sample" = données de démo
+      # si l'IP cloud se fait bloquer.
+      - key: ACTIVE_COLLECTORS
+        value: linkedin
+      # Génération de lettre : renseigne ta clé Mistral dans le dashboard Render.
+      - key: MISTRAL_API_KEY
+        sync: false
